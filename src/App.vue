@@ -40,8 +40,7 @@ const sendToAI = async () => {
       body: JSON.stringify(body),
     });
     const data = await response.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "无回应";
-    console.log("Gemini response:", reply);
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "描述不可用，请检查你的API密钥";
     description.value = reply;
   } catch (error) {
     console.error("Error:", error);
@@ -95,11 +94,9 @@ const guessLetter = () => {
       matchedIndices[Math.floor(Math.random() * matchedIndices.length)];
     revealedIndices.value.add(randomReveal);
   } else {
-    console.log("No matching letter found. Current life:", life.value);
     const originalLife = life.value;
     if (originalLife.includes(" ❤️ ")) {
       life.value = originalLife.replace(" ❤️ ", " 💔 ");
-      console.log("Life updated:", life.value);
     }
 
     if (!life.value.includes(" ❤️ ")) {
@@ -108,8 +105,6 @@ const guessLetter = () => {
       return;
     }
   }
-
-  message.value = `正确的字母: ${letter}`;
 
   // 检查是否所有字母都已揭示
   const allRevealed = targetWord.value
@@ -139,14 +134,24 @@ const restartGame = () => {
 onMounted(async () => {
   fetchNewWord();
 });
+
+onMounted(() => {
+  const input = document.getElementById("letter");
+  window.addEventListener("keydown", (event) => {
+    const key = event.key;
+    if (/^[a-zA-Z]$/.test(key)) {
+      input.value = key.toLowerCase();
+    }
+  });
+});
 </script>
 
 <template>
   <main>
     <div id="display">{{ displayWord }}</div>
     <div id="life">{{ life }}</div>
-    <div v-if="gameOver" id="message">{{ message }}</div>
     <div class="description">{{ description }}</div>
+    <div v-if="gameOver" id="message">{{ message }}</div>
     <form onsubmit="return false">
       <div class="input_area">
         <span style="font-weight: 700">Guess a letter:</span>
@@ -156,140 +161,122 @@ onMounted(async () => {
         <button id="description" @click="sendToAI">Get Description</button>
       </div>
     </form>
-    <div style="display: flex; justify-content: center; margin-top: 2rem">
+    <div class="apikey-container">
       <input
         type="password"
         id="apikey"
         placeholder="If you want git a hit, leave your Gemini API key here"
-        style="width: 40%"
         v-model="apiKey"
       />
+    </div>
+    <div class="api-note">
+      你的 API 密钥仅保存在浏览器内存中，不会以任何形式发送给第三方。<br />
+      Your API key is only saved in your browser's memory and is not sent to
+      third parties in any form.
     </div>
   </main>
 </template>
 
 <style scoped>
 * {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Comic Sans MS", "Marker Felt", cursive, sans-serif;
+  box-sizing: border-box;
 }
 
-.main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100dvh;
-}
-
-#life {
-  margin-left: auto;
-  margin-right: auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1rem;
-  font-weight: 700;
-  margin-top: 2rem;
-  color: #f44336;
-  text-shadow: 2px 2px 4px #000000;
-}
-#message {
-  margin-left: auto;
-  margin-right: auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1rem;
-  font-weight: 700;
-  margin-top: 2rem;
-  color: #4caf50;
+main {
+  border: 2px solid black;
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 600px;
+  margin: 50px auto;
+  text-align: center;
 }
 
 #display {
-  margin-left: auto;
-  margin-right: auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   font-size: 2rem;
-  font-weight: 700;
-  margin-top: 2rem;
-  color: #4caf50;
-  text-shadow: 2px 2px 4px #000000;
-  background-color: #f0f0f0;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  min-width: 300px;
-  max-width: 1000px;
-  height: 20px;
-  border: 2px solid #4caf50;
-  transition: all 0.3s ease;
+  margin-bottom: 20px;
+  letter-spacing: 10px;
 }
 
-.input_area {
-  flex: 0 0 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 2rem;
-  gap: 2%;
+#life {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
 }
 
-#letter,
-#apikey {
-  width: 100px;
-  height: 30px;
-  border-radius: 5px;
-  padding-left: 5px;
-}
-
-#guess {
-  width: 100px;
-  height: 30px;
-  border-radius: 5px;
-  border: none;
-  background-color: #4caf50;
-  color: white;
-}
-#guess:hover {
-  background-color: #45a049;
-}
-
-#Restart {
-  width: 100px;
-  height: 30px;
-  border-radius: 5px;
-  border: none;
-  background-color: #f44336;
-  color: white;
-}
-#Restart:hover {
-  background-color: #e53935;
-}
-
-#description {
-  width: 100px;
-  height: 30px;
-  border-radius: 5px;
-  border: none;
-  background-color: #2196f3;
-  color: white;
-}
-#description:hover {
-  background-color: #1976d2;
+#message {
+  font-size: 1rem;
+  font-style: italic;
+  margin-bottom: 20px;
 }
 
 .description {
-  font-size: 1.25rem;
-  color: #333;
+  font-size: 1rem;
+  margin: 20px auto;
+  max-width: 80%;
+  padding: 10px;
+  border: 2px dashed black;
+  border-radius: 5px;
+  background-color: #fdfdfd;
+  font-style: italic;
+  white-space: pre-wrap;
+}
+
+.input_area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+#letter {
+  width: 40px;
+  height: 30px;
   text-align: center;
-  max-width: 60%;
+  font-size: 1rem;
+  border: 2px solid black;
+  border-radius: 5px;
+}
+
+#guess,
+#Restart,
+#description {
+  height: 35px;
+  border: 2px solid black;
+  border-radius: 5px;
+  background-color: white;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 0 10px;
+}
+
+#guess:hover,
+#Restart:hover,
+#description:hover {
   background-color: #f0f0f0;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  margin-left: auto;
-  margin-right: auto;
+}
+
+.apikey-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+#apikey {
+  width: 60%;
+  height: 30px;
+  border: 2px solid black;
+  border-radius: 5px;
+  padding: 5px;
+  font-family: "Comic Sans MS", cursive;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.api-note {
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: #555;
+  font-style: italic;
 }
 </style>
